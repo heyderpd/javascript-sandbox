@@ -1,9 +1,10 @@
-const objMap = (obj, fx) => Object
+const objMap = (obj, fx, def = {}) => Object
   .keys(obj).reduce(
     (acc, value, key) => ({
       ...acc,
-      [key]: obj(value)
-    }))
+      [key]: fx(value)
+    }),
+    def)
 
 const maybe = function (state = {}, fxs = {}) {
   const state = { ...state }
@@ -57,17 +58,20 @@ const list = function () {
       return true
     }
   }
+  const getFirst = () => state.first.next()
+  const getLast = () => state.first.before()
 
   const removeFromList = key => {
     const item = state.links[key]
     if (item) {
       chainItem(
-        item.before,
-        item.next)
+        item.before(),
+        item.next())
 
       item.setBefore(null)
       item.setNext(null)
       delete state.links[key]
+      state.length -= 1
     }
   }
   const remove = state => () => removeFromList(state().key)
@@ -89,8 +93,27 @@ const list = function () {
     state.length += 1
   }
 
+  const mapFrom = from => fx => {
+    const first = from()
+    const result = []
+    let nextItem, res
+    while (nextItem = first.next()) {
+      const obj = nextItem.obj
+      if (obj) {
+        res = fx(obj)
+        result.push(res)
+      }
+    }
+    return result
+  }
+
+  const map = mapFrom(getFirst)
+  const mapReverse = mapFrom(getLast)
+
   return {
     push,
+    map,
+    mapReverse,
     state
   }
 }
