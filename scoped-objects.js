@@ -1,20 +1,25 @@
-const maybe = function (obj, state = {}, fxs = []) {
-  const state = {
-    obj,
-    ...state
-  }
+const objMap = (obj, fx) => Object
+  .keys(obj).reduce(
+    (acc, value, key) => ({
+      ...acc,
+      [key]: obj(value)
+    }))
 
-  state.fxs = fxs.map(f => f(() => state.obj))
+const maybe = function (state = {}, fxs = {}) {
+  const state = { ...state }
+
+  const getState = () => state.obj
+
+  state.fxs = objMap(fxs, getState)
 
   return { ...state }
 }
 
-const listItem = function (data, key, remove) {
+const listItem = function (state = {}, fxs = {}) {
   const state = {
+    ...state,
     next: null,
-    before: null,
-    key,
-    remove
+    before: null
   }
 
   const next = state => () => state().next
@@ -23,9 +28,8 @@ const listItem = function (data, key, remove) {
   const setBefore = state => before => state().before = before
 
   const item = new maybe(
-    data,
     state,
-    [next, before, setNext, setBefore, remove])
+    {...fxs, next, before, setNext, setBefore})
 
   return item
 }
@@ -34,9 +38,10 @@ const list = function () {
   const state = {
     lastKeys: 0,
     length: 0,
-    first: listItem(null),
-    last: listItem(null),
-    links: {}
+    first: listItem(),
+    last: listItem(),
+    links: {},
+    position: 0
   }
 
   const chainItem = (itemA, itemB) => {
@@ -52,7 +57,8 @@ const list = function () {
       return true
     }
   }
-  const _remove = key => {
+
+  const removeFromList = key => {
     const item = state.links[key]
     if (item) {
       chainItem(
@@ -64,17 +70,14 @@ const list = function () {
       delete state.links[key]
     }
   }
-
-  const remove = state => () => {
-    const { key, remove } = state()
-    remove(key)
-  }
+  const remove = state => () => removeFromList(state().key)
 
   const push = obj => {
-    const item = listItem(
-      obj,
-      state.lastKeys,
-      remove)
+    const item = listItem({
+        obj,
+        key: state.lastKeys
+      },
+      { remove })
 
     if (!ifFirstSet(item)) {
       const last = state.last.before()
@@ -88,7 +91,6 @@ const list = function () {
 
   return {
     push,
-    remove,
     state
   }
 }
