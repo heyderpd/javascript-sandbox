@@ -93,22 +93,25 @@ const list = function () {
     state.length += 1
   }
 
-  const mapFrom = from => fx => {
-    const first = from()
+  const mapFrom = (first, next) => fx => {
     const result = []
-    let nextItem, res
-    while (nextItem = first.next()) {
-      const obj = nextItem.obj
+    let nextItem = first
+    while (nextItem = next(nextItem)) {
+      const { obj } = nextItem
       if (obj) {
-        res = fx(obj)
-        result.push(res)
+        result.push(fx(obj))
       }
     }
     return result
   }
 
-  const map = mapFrom(getFirst)
-  const mapReverse = mapFrom(getLast)
+  const map = mapFrom(
+    state.first,
+    i => i.next())
+
+  const mapReverse = mapFrom(
+    state.last,
+    i => i.before())
 
   return {
     push,
