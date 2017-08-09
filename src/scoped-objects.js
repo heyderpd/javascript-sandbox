@@ -6,70 +6,66 @@ const objMap = (obj, fx, def = {}) => Object
     }),
     def)
 
-const maybe = function (state = {}, fxs = {}) {
-  const state = { ...state }
-
+const createObject = function (state = {}, fxs = {}) {
+  const state = { ..._state }
   const getState = () => state.obj
-
-  state.fxs = objMap(fxs, getState)
-
-  return { ...state }
+  return objMap(fxs, getState, state)
 }
 
-const listItem = function (state = {}, fxs = {}) {
-  const state = {
-    ...state,
-    next: null,
-    before: null
-  }
-
-  const next = state => () => state().next
-  const before = state => () => state().before
-  const setNext = state => next => state().next = next
-  const setBefore = state => before => state().before = before
-
-  const item = new maybe(
-    state,
-    {...fxs, next, before, setNext, setBefore})
-
-  return item
+const listItem = function (obj, key, remove) {
+  return createObject({
+    obj,
+    key
+  }, {
+    remove
+  })
 }
 
 const list = function () {
   const state = {
     lastKeys: 0,
     length: 0,
-    first: listItem(),
-    last: listItem(),
+    first: {},
+    last: {},
     links: {},
     position: 0
   }
 
   const chainItem = (itemA, itemB) => {
-    itemB.setBefore(itemA)
-    itemA.setNext(itemB)
+    itemA.next = itemB
+    itemB.before = itemA
   }
-  const setFirst = item => chainItem(state.first, item)
-  const setLast = item => chainItem(item, state.last)
+
+  const getFirst = () => state.first.next
+
+  const getLast = () => state.first.before
+
+  const setFirst = item => {
+    const first = getFirst()
+    chainItem(state.first, item)
+    chainItem(item, first)
+  }
+
+  const setLast = item => {
+    const last = getLast()
+    chainItem(state.last, item)
+    chainItem(item, last)
+  }
+
   const ifFirstSet = item => {
     if (state.length === 0) {
-      setFirst(item)
-      setLast(item)
+      chainItem(state.first, item)
+      chainItem(item, state.last)
       return true
     }
   }
-  const getFirst = () => state.first.next()
-  const getLast = () => state.first.before()
 
   const removeFromList = key => {
     const item = state.links[key]
     if (item) {
       chainItem(
-        item.before(),
-        item.next())
-
-      item.setBefore(null)
-      item.setNext(null)
+        item.before,
+        item.next)
       delete state.links[key]
       state.length -= 1
     }
@@ -84,8 +80,6 @@ const list = function () {
       { remove })
 
     if (!ifFirstSet(item)) {
-      const last = state.last.before()
-      chainItem(item, last)
       setLast(item)
     }
 
@@ -107,16 +101,17 @@ const list = function () {
 
   const map = mapFrom(
     state.first,
-    i => i.next())
+    i => i.next)
 
   const mapReverse = mapFrom(
     state.last,
-    i => i.before())
+    i => i.before)
 
-  return {
-    push,
-    map,
-    mapReverse,
-    state
-  }
+  return createObject(
+    state,
+    {
+      push,
+      map,
+      mapReverse
+    })
 }
