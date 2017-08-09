@@ -7,7 +7,6 @@ const objMap = (obj, fx, def = {}) => Object
     def)
 
 const createObject = function (state = {}, fxs = {}) {
-  const state = { ..._state }
   const getState = () => state.obj
   return objMap(fxs, getState, state)
 }
