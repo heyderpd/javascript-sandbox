@@ -106,11 +106,10 @@ const list = function () {
     state.last,
     i => i.before)
 
-  return createObject(
-    state,
-    {
-      push,
-      map,
-      mapReverse
-    })
+  return {
+    push,
+    map,
+    mapReverse,
+    state
+  }
 }
