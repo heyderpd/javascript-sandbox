@@ -89,11 +89,15 @@ export const list = () => {
   }
 
   const mapFrom = (first, next) => (fx = x=>x, circular = false) => {
+    if (circular) {
+      return circularMap(first, next, fx)
+    }
+
+    let nextItem = first    
     let limit = state.length
     const result = []
-    let nextItem = first
     while (nextItem = next(nextItem)) {
-      if (!circular && limit-- < 0) {
+      if (limit-- < 0) {
         throw 'infinit map! this is a Circular!'
       }
 
@@ -105,6 +109,15 @@ export const list = () => {
     return result
   }
 
+  const circularMap = function* (nextItem, next, fx) {
+    while (nextItem = next(nextItem)) {
+      const { obj } = nextItem
+      if (obj) {
+        yield fx(obj)
+      }
+    }
+  }
+  
   const map = mapFrom(
     state.first,
     i => i.next)
@@ -113,10 +126,22 @@ export const list = () => {
     state.last,
     i => i.before)
 
+  const makeCircular = circular => {
+    const first = getFirst()
+    const last = getLast()
+    if (circular) {
+      chainItem(last, first)            
+    } else {
+      first.before = state.first      
+      last.next = state.last
+    }
+  }
+
   return {
     push,
     map,
     mapReverse,
+    makeCircular,
     state
   }
 }
