@@ -8,16 +8,38 @@ const items = [
   { c: 3 },
 ]
 
-describe('test', function() {
-  it('list', () => {
+describe('list', function() {
+  it('push', () => {
     const L = list()
     L.push(items[0])
-    // console.log(L)
     L.push(items[1])
-    // console.log(L)
-    const arr = L.map(x=>x, true)
-    console.log(arr)
-    // assert.deepEqual(result,
-    //   [ 'bla.com', 'ble.com.br' ])
+    L.push(items[2])
+    
+    const arr = L.map()
+
+    assert.deepEqual(
+      arr,
+      items)
+  })
+
+  it('circular', () => {
+    const L = list()
+    L.push(items[0])
+    L.push(items[1])
+    L.makeCircular(true)
+    
+    const iterator = L.map(
+      x=> x,
+      true)
+
+    assert.deepEqual(
+      iterator.next().value,
+      {a: 1})
+    assert.deepEqual(
+      iterator.next().value,
+      {b: 2})
+    assert.deepEqual(
+      iterator.next().value,
+      {a: 1})
   })
 })
