@@ -2,7 +2,8 @@
   "name": "javascript-sandbox",
   "private": true,
   "scripts": {
-    "transpile": "babel src --out-dir dist"
+    "transpile": "babel src --out-dir dist",
+    "test": "mocha --compilers js:babel-register --reporter spec 'test/*.spec.js'"
   },
   "devDependencies": {
     "babel-cli": "^6.24.1",

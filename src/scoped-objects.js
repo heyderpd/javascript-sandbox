@@ -1,26 +1,28 @@
-const objMap = (obj, fx, def = {}) => Object
+const objectMap = (obj, fx, def = {}) => Object
   .keys(obj).reduce(
-    (acc, value, key) => ({
-      ...acc,
-      [key]: fx(value)
-    }),
+    (acc, key) => {
+      const value = obj[key]
+      return ({
+        ...acc,
+        [key]: value(fx)
+      })
+    },
     def)
 
-const createObject = function (state = {}, fxs = {}) {
-  const getState = () => state.obj
-  return objMap(fxs, getState, state)
+const createObject = (state = {}, fxs = {}) => {
+  return objectMap(
+    fxs,
+    () => state,
+    state)
 }
 
-const listItem = function (obj, key, remove) {
-  return createObject({
-    obj,
-    key
-  }, {
-    remove
-  })
+const listItem = (state, remove) => {
+  return createObject(
+    state,
+  { remove })
 }
 
-const list = function () {
+export const list = () => {
   const state = {
     lastKeys: 0,
     length: 0,
@@ -37,7 +39,7 @@ const list = function () {
 
   const getFirst = () => state.first.next
 
-  const getLast = () => state.first.before
+  const getLast = () => state.last.before
 
   const setFirst = item => {
     const first = getFirst()
@@ -47,8 +49,8 @@ const list = function () {
 
   const setLast = item => {
     const last = getLast()
-    chainItem(state.last, item)
-    chainItem(item, last)
+    chainItem(last, item)
+    chainItem(item, state.last)
   }
 
   const ifFirstSet = item => {
@@ -76,7 +78,7 @@ const list = function () {
         obj,
         key: state.lastKeys
       },
-      { remove })
+      remove)
 
     if (!ifFirstSet(item)) {
       setLast(item)
@@ -86,10 +88,15 @@ const list = function () {
     state.length += 1
   }
 
-  const mapFrom = (first, next) => fx => {
+  const mapFrom = (first, next) => (fx = x=>x, circular = false) => {
+    let limit = state.length
     const result = []
     let nextItem = first
     while (nextItem = next(nextItem)) {
+      if (!circular && limit-- < 0) {
+        throw 'infinit map! this is a Circular!'
+      }
+
       const { obj } = nextItem
       if (obj) {
         result.push(fx(obj))
