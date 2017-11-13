@@ -1,7 +1,7 @@
 import Peer from 'peerjs'
 import randomstring from 'randomstring'
 
-export const connection = () => {
+const Connection = () => {
   const state = {
     peer: null,
     connection: null,
@@ -33,7 +33,7 @@ export const connection = () => {
     state.peer = new Peer(randomstring.generate(5), { key: 'shkdal024cp7gb9' })
   }
 
-  const _safeOnData = conn => {
+  const _safeOnData = data => {
     if (typeof(state.onData) === 'function') {
       state.onData(data)
     }
@@ -41,7 +41,10 @@ export const connection = () => {
 
   const _onConnection = conn => {
     state.connection = conn
-    conn.on('data', state._safeOnData)
+    state.peer.on('open', _onOpen)
+    state.peer.on('close', _onClose)
+    state.peer.on('error', err => (_onClose(), console.log('-*-error', err)))
+    conn.on('data', _safeOnData)
   }
 
   const object = {}
@@ -55,9 +58,6 @@ export const connection = () => {
   object.join = id => {
     _setJoin()
     const conn = state.peer.connect(id)
-    state.peer.on('open', _onOpen)
-    state.peer.on('close', _onClose)
-    state.peer.on('error', err => (_onClose(), console.log('-*-error', err)))
     _onConnection(conn)
     return object
   }
@@ -69,7 +69,7 @@ export const connection = () => {
     return object
   }
 
-  object.send = action => {
+  object.send = data => {
     state.connection.send(data)
     return object
   }
@@ -78,3 +78,5 @@ export const connection = () => {
 
   return object
 }
+
+export default Connection
