@@ -1,7 +1,7 @@
 import Peer from 'peerjs'
 import randomstring from 'randomstring'
 
-export const list = () => {
+export const connection = () => {
   const state = {
     peer: null,
     connection: null,
